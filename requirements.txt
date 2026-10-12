@@ -1,4 +1,5 @@
-Flask
-Groq
+flask
+groq
 pytz
 requests
+gunicorn
