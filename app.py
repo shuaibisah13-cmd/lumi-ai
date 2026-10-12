@@ -12,23 +12,24 @@ HTML_PAGE = """
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>LUMI AI</title>
 <style>
-body{margin:0;font-family:sans-serif;background:#0f0f0f;color:#fff;display:flex;flex-direction:column;height:100vh}
-.header{padding:15px;background:#1a1a1a;text-align:center;border-bottom:1px solid #333}
-#chat{flex:1;overflow-y:auto;padding:20px;position:relative}
-#watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.08;pointer-events:none;z-index:0}
-#watermark img{width:350px}
+body{margin:0;font-family:sans-serif;background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);color:#fff;display:flex;flex-direction:column;height:100vh}
+.header{padding:15px;background:rgba(0,0,0,0.3);text-align:center;border-bottom:1px solid rgba(255,255,255,0.2);backdrop-filter: blur(10px)}
+#chat{flex:1;overflow-y:auto;padding:20px;position:relative;background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)}
+#watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.18;pointer-events:none;z-index:0}
+#watermark img{width:300px;filter: drop-shadow(0 0 20px rgba(255,255,255,0.5))}
 .messages{position:relative;z-index:1}
-.mag{margin:12px 0;padding:12px 16px;border-radius:18px;max-width:80%;line-height:1.5}
-.user{background:#2e7d32;margin-left:auto}
-.ai{background:#2a2a2a}
+.mag{margin:12px 0;padding:12px 16px;border-radius:18px;max-width:80%;line-height:1.5;backdrop-filter: blur(5px)}
+.user{background:rgba(46, 125, 50, 0.9);margin-left:auto}
+.ai{background:rgba(42, 42, 42, 0.85)}
 .suggestions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px 0;position:relative;z-index:1}
-.sug{border:1px solid #444;padding:12px 16px;border-radius:12px;background:#1e1e1e;cursor:pointer;font-size:14px}
-#inputArea{display:flex;padding:12px;background:#1a1a1a;gap:10px}
-#inputArea input{flex:1;padding:14px;border-radius:24px;border:1px solid #444;background:#2a2a2a;color:white;outline:none}
+.sug{border:1px solid rgba(255,255,255,0.3);padding:12px 16px;border-radius:12px;background:rgba(30,30,30,0.6);cursor:pointer;font-size:14px;backdrop-filter: blur(10px)}
+.sug:hover{background:rgba(51,51,51,0.8)}
+#inputArea{display:flex;padding:12px;background:rgba(26,26,26,0.8);gap:10px;backdrop-filter: blur(10px)}
+#inputArea input{flex:1;padding:14px;border-radius:24px;border:1px solid rgba(255,255,255,0.3);background:rgba(42,42,42,0.8);color:white;outline:none}
 #inputArea button{padding:14px 22px;border-radius:24px;border:none;background:#4caf50;color:white;font-weight:bold;cursor:pointer}
 #adModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;justify-content:center;align-items:center}
 .box{background:white;color:black;padding:30px;border-radius:20px;text-align:center;width:90%;max-width:360px}
-#limit{font-size:12px;color:#aaa;margin-top:5px}
+#limit{font-size:12px;color:rgba(255,255,255,0.8);margin-top:5px}
 </style>
 </head>
 <body>
