@@ -1,11 +1,24 @@
 from flask import Flask, request, jsonify, send_from_directory
-import os, json, urllib.parse
+import os, urllib.parse
 from datetime import datetime
-import pytz
 from groq import Groq
 
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+# GROQ NEW VALID MODELS - 2026
+CHAT_MODELS = ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3-32b"]
+
+def ask_groq(messages):
+    last_err = None
+    for m in CHAT_MODELS:
+        try:
+            c = client.chat.completions.create(model=m, messages=messages)
+            return c.choices[0].message.content
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err
 
 HTML = """
 <!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>
@@ -138,10 +151,12 @@ document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Ent
 def home(): return HTML
 @app.route('/logo.png')
 def logo(): return send_from_directory('.', 'logo.png')
+
 @app.route('/voice', methods=['POST'])
 def voice():
     try:
-        audio=request.files.get('audio');audio.save('/tmp/v.webm')
+        audio=request.files.get('audio')
+        audio.save('/tmp/v.webm')
         with open('/tmp/v.webm','rb') as f:
             t=client.audio.transcriptions.create(model="whisper-large-v3", file=f)
         return jsonify({"text": t.text})
@@ -150,27 +165,29 @@ def voice():
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        d=request.json; user_msg=d.get('message','').strip(); img_data=d.get('image')
+        d=request.json
+        user_msg=d.get('message','').strip()
+        img_data=d.get('image')
         lower=user_msg.lower()
+
         if any(x in lower for x in ['founder','who built you','who made you','who created you','owner']):
             return jsonify({"reply": "My founder is **shuaibisah** - Shuaibu Isah, founder of Elshuaib Tech. He built LUMI AI to do everything ChatGPT can do!", "image_url": None})
+
         is_generate = any(x in lower for x in ['generate','create a picture','create an image','draw','make a picture'])
         is_edit = img_data is not None
+
         if is_generate or is_edit:
             prompt = user_msg if user_msg else "Make HD beautiful"
-            if not is_edit: prompt = user_msg.replace("Generate","").replace("create","").strip() or "beautiful image"
+            if not is_edit:
+                prompt = user_msg.replace("Generate","").replace("create","").strip() or "beautiful image"
             safe = urllib.parse.quote(prompt[:600])
             url = f"https://image.pollinations.ai/prompt/{safe}?width=1024&height=1024&nologo=true&seed={int(datetime.now().timestamp())}&model=flux"
             return jsonify({"reply": f"Here is your image for: **{prompt}**", "image_url": url})
-        if img_data:
-            try:
-                comp = client.chat.completions.create(model="meta-llama/llama-4-scout-17b-16e-instruct", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"},{"type":"image_url","image_url":{"url": img_data}}]}])
-                return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
-            except Exception as e:
-                return jsonify({"reply": f"Vision error: {e}", "image_url": None})
+
         system = "You are LUMI AI, built by shuaibisah (Shuaibu Isah) of Elshuaib Tech. Do everything ChatGPT can: chat, code, generate images, edit images, analyze pictures, voice. If asked founder, say shuaibisah. Never say OpenAI/Meta made you."
-        comp = client.chat.completions.create(model="llama-3.1-8b-instant", messages=[{"role":"system","content":system},{"role":"user","content":user_msg}])
-        return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
+        answer = ask_groq([{"role":"system","content":system},{"role":"user","content":user_msg}])
+        return jsonify({"reply": answer, "image_url": None})
+
     except Exception as e:
         return jsonify({"reply": f"Error: {e}", "image_url": None})
 
