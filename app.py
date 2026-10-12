@@ -14,8 +14,6 @@ HTML = """
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Segoe UI, sans-serif;background:#0a0a0a;color:#ececec;display:flex;height:100vh;overflow:hidden}
-
-/* YOUR ORIGINAL GREEN + BLACK BACKGROUND - RESTORED */
 #sidebar{width:260px;background:#000000;border-right:1px solid #222;display:flex;flex-direction:column;padding:12px}
 #sidebar h1{font-size:22px;padding:10px;color:#fff}
 #sidebar h1 span{color:#4caf50}
@@ -166,13 +164,12 @@ def chat():
             return jsonify({"reply": f"Here is your image for: **{prompt}**", "image_url": url})
         if img_data:
             try:
-                comp = client.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"},{"type":"image_url","image_url":{"url": img_data}}]}])
+                comp = client.chat.completions.create(model="meta-llama/llama-4-scout-17b-16e-instruct", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"},{"type":"image_url","image_url":{"url": img_data}}]}])
                 return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
-            except:
-                comp = client.chat.completions.create(model="llama-3.2-90b-vision-preview", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe"},{"type":"image_url","image_url":{"url": img_data}}]}])
-                return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
+            except Exception as e:
+                return jsonify({"reply": f"Vision error: {e}", "image_url": None})
         system = "You are LUMI AI, built by shuaibisah (Shuaibu Isah) of Elshuaib Tech. Do everything ChatGPT can: chat, code, generate images, edit images, analyze pictures, voice. If asked founder, say shuaibisah. Never say OpenAI/Meta made you."
-        comp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":system},{"role":"user","content":user_msg}])
+        comp = client.chat.completions.create(model="llama-3.1-8b-instant", messages=[{"role":"system","content":system},{"role":"user","content":user_msg}])
         return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
     except Exception as e:
         return jsonify({"reply": f"Error: {e}", "image_url": None})
