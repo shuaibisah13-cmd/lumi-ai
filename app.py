@@ -29,7 +29,8 @@ body{font-family:'Segoe UI',sans-serif;background:#0a0a0a;color:#ececec;display:
 .header b{font-size:18px}
 #chat{flex:1;overflow-y:auto;padding:30px;position:relative}
 #watermark{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.06;pointer-events:none;z-index:0}
-#watermark img{width:500px;filter:grayscale(1)}
+#watermark img{width:380px;filter:none}
+#watermark{opacity:o.20}
 .messages{position:relative;z-index:2;max-width:800px;margin:0 auto;width:100%}
 .welcome{text-align:center;margin-top:80px;animation:fadeUp 0.8s ease}
 .welcome h2{font-size:42px;background:linear-gradient(90deg,#4caf50,#81c784,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
