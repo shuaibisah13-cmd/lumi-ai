@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-import os, requests, json, base64
+import os, requests, json
 from datetime import datetime
 import pytz
 from groq import Groq
@@ -38,7 +38,7 @@ def wiki_live(query):
 HTML = """
 <!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>
 <meta name="theme-color" content="#4caf50"><link rel="manifest" href="/manifest.json">
-<title>LUMI PRO MAX - Voice + Vision + Paystack</title>
+<title>LUMI PRO MAX</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <style>
@@ -65,12 +65,12 @@ HTML = """
 .signupBox input{width:100%;padding:12px;border-radius:10px;border:1px solid #333;background:#1a1a1a;color:#fff;margin-bottom:10px}
 </style></head><body>
 <div id='sidebar'><h1>LUMI <span style='color:#4caf50'>PRO MAX</span></h1><div class='newChat' onclick='location.reload()'>+ New Chat</div>
-<div style='padding:10px;font-size:11px;color:#555'>Free: <span id='limit'>0/5</span><div id='paidBadge' style='display:none;color:#4caf50;font-weight:bold'>✅ UNLIMITED</div>
-<div style='margin-top:20px;color:#888'><b>Features:</b><br>📸 Picture Upload<br>🎤 Voice Chat<br>🔊 AI Speaks<br>📱 APK Ready</div></div></div>
-<div id='main'><div class='header'><b>💰 LUMI PRO MAX</b><span id='uEmail' style='font-size:11px;color:#666'></span></div>
+<div style='padding:10px;font-size:11px;color:#555'>Free: <span id='limit'>0/5</span><div id='paidBadge' style='display:none;color:#4caf50;font-weight:bold'>✅ UNLIMITED PAID</div>
+<div style='margin-top:20px;color:#888'><b>Features:</b><br>📸 Picture Upload<br>🎤 Voice Chat<br>🔊 AI Speaks</div></div></div>
+<div id='main'><div class='header'><b>💰 LUMI PRO MAX - Paystack Ready</b><span id='uEmail' style='font-size:11px;color:#666'></span></div>
 <div id='chat'><div id='watermark'><img src='/logo.png' onerror="this.style.display='none'"><div style='font-size:60px;color:#4caf50;font-weight:bold;text-align:center'>LUMI AI</div></div>
-<div class='messages' id='messages'><div class='welcome' id='welcome'><h2>LUMI PRO MAX</h2><p style='color:#888'>Voice + Picture + Live Wiki</p>
-<div class='cards'><div class='card' onclick="sendSug('Who is Bola Ahmed Tinubu?')"><b>🇳🇬 Tinubu</b></div><div class='card' onclick="document.getElementById('fileInput').click()"><b>📸 Upload Picture</b><br><small>Ask about any image</small></div><div class='card' onclick="startVoice()"><b>🎤 Voice Chat</b><br><small>Speak to LUMI</small></div><div class='card' onclick="sendSug('What is time in Norway now?')"><b>🕐 Live Time</b></div></div></div></div></div>
+<div class='messages' id='messages'><div class='welcome' id='welcome'><h2>LUMI PRO MAX</h2><p style='color:#888'>Voice + Picture + Paystack ₦1000</p>
+<div class='cards'><div class='card' onclick="sendSug('Who is Bola Ahmed Tinubu?')"><b>🇳🇬 Tinubu Live</b></div><div class='card' onclick="document.getElementById('fileInput').click()"><b>📸 Upload Picture</b></div><div class='card' onclick="startVoice()"><b>🎤 Voice Chat</b></div><div class='card' onclick="sendSug('What is time in Norway now?')"><b>🕐 Live Time</b></div></div></div></div></div>
 <div id='inputArea'>
 <div id='preview' class='preview'><img id='previewImg'><button onclick='clearImage()' style='background:#333;color:#fff;border:none;padding:4px 8px;border-radius:6px;margin-left:8px;cursor:pointer'>X Remove</button></div>
 <div class='inputRow'>
@@ -80,8 +80,8 @@ HTML = """
 <div class='inputBox'><input id='input' placeholder='Ask, upload picture, or use voice...'><button id='sendBtn' class='iconBtn' onclick='send()'>↑</button></div>
 </div></div></div>
 
-<div id='signupModal'><div class='signupBox'><h2 style='color:#4caf50'>LUMI PRO MAX ✨</h2><p style='color:#666;font-size:13px'>By Elshuaib Tech</p><input id='emailInput' type='email' placeholder='Your Email'><input id='nameInput' placeholder='Full Name'><button onclick='doSignup()' style='width:100%;padding:12px;background:#fff;color:#000;border:none;border-radius:10px;font-weight:bold;cursor:pointer'>Start - 5 Free</button></div></div>
-<div id='payModal' style='display:none'><div class='box'><h2 style='color:#4caf50'>💳 Unlock Unlimited</h2><p style='color:#ccc;margin:15px 0'>5 free used.<br>Pay <b>₦1,000</b> for <b>UNLIMITED</b> + Voice + Picture</p><button onclick='payWithPaystack()' style='width:100%;padding:16px;background:#4caf50;color:#000;border:none;border-radius:12px;font-weight:bold;font-size:16px;cursor:pointer'>💰 Pay ₦1,000</button><button onclick='document.getElementById("payModal").style.display="none"' style='margin-top:12px;background:transparent;color:#666;border:none;cursor:pointer'>Close</button></div></div>
+<div id='signupModal'><div class='signupBox'><h2 style='color:#4caf50'>LUMI PRO MAX ✨</h2><p style='color:#666;font-size:13px'>By Elshuaib Tech</p><input id='emailInput' type='email' placeholder='Your Email'><input id='nameInput' placeholder='Full Name'><button onclick='doSignup()' style='width:100%;padding:12px;background:#fff;color:#000;border:none;border-radius:10px;font-weight:bold;cursor:pointer'>Start - 5 Free Chats</button></div></div>
+<div id='payModal' style='display:none'><div class='box'><h2 style='color:#4caf50'>💳 Unlock Unlimited</h2><p style='color:#ccc;margin:15px 0'>You used 5 free.<br>Pay <b>₦1,000</b> for <b>UNLIMITED</b> Forever</p><button onclick='payWithPaystack()' style='width:100%;padding:16px;background:#4caf50;color:#000;border:none;border-radius:12px;font-weight:bold;font-size:16px;cursor:pointer'>💰 Pay ₦1,000 with Paystack</button><button onclick='document.getElementById("payModal").style.display="none"' style='margin-top:12px;background:transparent;color:#666;border:none;cursor:pointer'>Close</button></div></div>
 
 <script>
 let count=0;let userEmail=localStorage.getItem('lumi_email');let isPaid=localStorage.getItem('lumi_paid')==='true';let selectedImageBase64=null;let mediaRecorder=null;let audioChunks=[];
@@ -100,22 +100,16 @@ async function startVoice(){
     mediaRecorder.onstop=async()=>{
       micBtn.classList.remove('recording');micBtn.innerText='🎤';
       let audioBlob=new Blob(audioChunks,{type:'audio/webm'});
-      let form=new FormData();form.append('audio',audioBlob);form.append('email',localStorage.getItem('lumi_email'));
-      let ms=document.getElementById('messages');let id='a'+Date.now();ms.innerHTML+=`<div class='mag' id='${id}'><div class='avatar'>✨</div><div class='bubble ai'>🎤 Transcribing voice...</div></div>`;
+      let form=new FormData();form.append('audio',audioBlob);
+      let ms=document.getElementById('messages');let id='a'+Date.now();ms.innerHTML+=`<div class='mag' id='${id}'><div class='avatar'>✨</div><div class='bubble ai'>🎤 Transcribing...</div></div>`;
       let res=await fetch('/voice',{method:'POST',body:form});let data=await res.json();
       if(data.text){document.getElementById('input').value=data.text;document.getElementById(id).remove();send();}
-      else{document.getElementById(id).innerHTML=`<div class='avatar'>✨</div><div class='bubble ai'>❌ Voice failed, try again</div>`;}
+      else{document.getElementById(id).innerHTML=`<div class='avatar'>✨</div><div class='bubble ai'>❌ Try again</div>`;}
     };
-    mediaRecorder.start();
-    setTimeout(()=>{if(mediaRecorder.state==='recording')mediaRecorder.stop();},5000);
+    mediaRecorder.start();setTimeout(()=>{if(mediaRecorder.state==='recording')mediaRecorder.stop();},6000);
   }catch(e){alert('Mic permission needed');}
 }
-function speakText(text){
-  if('speechSynthesis' in window){
-    let clean=text.replace(/[*#`_]/g,'').substring(0,300);
-    let ut=new SpeechSynthesisUtterance(clean);ut.rate=1;ut.lang='en-US';speechSynthesis.speak(ut);
-  }
-}
+function speakText(text){if('speechSynthesis' in window){let clean=text.replace(/[*#`_]/g,'').substring(0,300);let ut=new SpeechSynthesisUtterance(clean);ut.rate=1;speechSynthesis.speak(ut);}}
 async function send(){
   let inp=document.getElementById('input');let msg=inp.value.trim();if(!msg &&!selectedImageBase64)return;
   if(!localStorage.getItem('lumi_email')){document.getElementById('signupModal').style.display='flex';return}
@@ -124,16 +118,26 @@ async function send(){
   let imgHtml=selectedImageBase64?`<br><img src='${selectedImageBase64}'>`:'';
   ms.innerHTML+=`<div class='mag'><div class='avatar user'>You</div><div class='bubble user'>${msg}${imgHtml}</div></div>`;
   let curImg=selectedImageBase64;inp.value='';clearImage();
-  let id='a'+Date.now();ms.innerHTML+=`<div class='mag' id='${id}'><div class='avatar'>✨</div><div class='bubble ai'>⏳ Analyzing${curImg?' picture':''}...</div></div>`;document.getElementById('chat').scrollTop=999999;
+  let id='a'+Date.now();ms.innerHTML+=`<div class='mag' id='${id}'><div class='avatar'>✨</div><div class='bubble ai'>⏳ Thinking...</div></div>`;document.getElementById('chat').scrollTop=999999;
   let res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,email:localStorage.getItem('lumi_email'),image:curImg})});
-  let data=await res.json();document.getElementById(id).innerHTML=`<div class='avatar'>✨</div><div class='bubble ai'>${marked.parse(data.reply)} <br><button onclick="speakText(\`${data.reply.replace(/`/g,'').substring(0,200)}\`)" style='background:#222;color:#4caf50;border:1px solid #333;padding:6px 12px;border-radius:20px;cursor:pointer;margin-top:8px'>🔊 Speak</button></div>`;
+  let data=await res.json();document.getElementById(id).innerHTML=`<div class='avatar'>✨</div><div class='bubble ai'>${marked.parse(data.reply)} <br><button onclick="speakText('${data.reply.replace(/'/g,"").substring(0,150)}')" style='background:#222;color:#4caf50;border:1px solid #333;padding:6px 12px;border-radius:20px;cursor:pointer;margin-top:8px'>🔊 Speak</button></div>`;
   if(!isPaid){count++;document.getElementById('limit').innerText=`${count}/5`;}speakText(data.reply);
 }
 function payWithPaystack(){
   let email=localStorage.getItem('lumi_email');
-  let handler=PaystackPop.setup({key:'pk_test_YOUR_KEY_HERE',email:email,amount:100000,currency:'NGN',ref:'LUMI_'+Math.floor((Math.random()*1000000000)+1),
-    callback:function(r){fetch('/verify-pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,reference:r.reference})}).then(x=>x.json()).then(d=>{if(d.ok){localStorage.setItem('lumi_paid','true');isPaid=true;document.getElementById('payModal').style.display='none';document.getElementById('paidBadge').style.display='block';document.getElementById('limit').style.display='none';alert('✅ UNLIMITED Unlocked! Voice + Picture enabled!');}})},
-    onClose:function(){alert('Cancelled');}});handler.openIframe();
+  let handler=PaystackPop.setup({
+    key: 'pk_test_48e66b6f363f0eb10721254b7163128ca99ad360',
+    email: email,
+    amount: 100000,
+    currency: 'NGN',
+    ref: 'LUMI_'+Math.floor((Math.random()*1000000000)+1),
+    callback:function(r){
+      fetch('/verify-pay',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,reference:r.reference})})
+     .then(x=>x.json()).then(d=>{if(d.ok){localStorage.setItem('lumi_paid','true');isPaid=true;document.getElementById('payModal').style.display='none';document.getElementById('paidBadge').style.display='block';document.getElementById('limit').style.display='none';alert('✅ Payment Success! Unlimited Unlocked!');}})
+    },
+    onClose:function(){}
+  });
+  handler.openIframe();
 }
 document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Enter')send()});
 </script></body></html>
@@ -176,34 +180,25 @@ def voice():
 def chat():
     try:
         data=request.json; user_msg=data.get('message',''); img_data=data.get('image')
-        now_utc, now_ng, now_oslo=get_live(); ml=user_msg.lower()
+        now_utc, now_ng, now_oslo=get_live()
         live_wiki=None
-        if any(x in ml for x in ['who is','what is','tinubu','president']) and not img_data:
+        if any(x in user_msg.lower() for x in ['who is','what is','tinubu','president']) and not img_data:
             live_wiki=wiki_live(user_msg)
-
-        system=f"You are LUMI PRO MAX by Elshuaib Tech. You can SEE pictures and HEAR voice. Time: Nigeria {now_ng.strftime('%Y-%m-%d %H:%M WAT')}, Norway {now_oslo.strftime('%Y-%m-%d %H:%M CEST')}."
+        system=f"You are LUMI PRO MAX by Elshuaib Tech. Time: Nigeria {now_ng.strftime('%Y-%m-%d %H:%M WAT')}, Norway {now_oslo.strftime('%Y-%m-%d %H:%M CEST')}."
         if live_wiki: system+=f"\nLIVE WIKI: {live_wiki}"
-
         messages=[{"role":"system","content":system}]
-
         if img_data:
-            # Groq Vision Model
-            messages.append({"role":"user","content":[
-                {"type":"text","text": user_msg or "What is in this picture? Describe in detail."},
-                {"type":"image_url","image_url":{"url": img_data}}
-            ]})
+            messages.append({"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"}, {"type":"image_url","image_url":{"url": img_data}}]})
             model="meta-llama/llama-4-scout-17b-16e-instruct"
         else:
             messages.append({"role":"user","content": user_msg})
             model="openai/gpt-oss-20b"
-
         comp=client.chat.completions.create(model=model, messages=messages)
         reply=comp.choices[0].message.content
-        if live_wiki and not img_data:
-            reply=f"📚 **LIVE Wikipedia:** {live_wiki}\n\n---\n\n"+reply
+        if live_wiki and not img_data: reply=f"📚 LIVE Wikipedia: {live_wiki}\n\n---\n\n"+reply
         return jsonify({"reply":reply})
     except Exception as e:
-        return jsonify({"reply": f"Error: {e}. Try smaller image."})
+        return jsonify({"reply": f"Error: {e}"})
 
 if __name__=='__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT",10000)))
