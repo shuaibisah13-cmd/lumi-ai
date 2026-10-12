@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-import os, requests, json, urllib.parse
+import os, json, urllib.parse
 from datetime import datetime
 import pytz
 from groq import Groq
@@ -7,63 +7,89 @@ from groq import Groq
 app = Flask(__name__)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-def get_live():
-    now_utc = datetime.now(pytz.utc)
-    now_ng = now_utc.astimezone(pytz.timezone('Africa/Lagos'))
-    return now_utc, now_ng, now_utc.astimezone(pytz.timezone('Europe/Oslo'))
-
 HTML = """
 <!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>LUMI AI</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:Inter,Segoe UI;background:#212121;color:#ececec;display:flex;height:100vh;overflow:hidden}
-#sidebar{width:260px;background:#171717;display:flex;flex-direction:column;padding:12px}
-#sidebar h1{font-size:20px;padding:8px}.newChat{background:#2f2f2f;color:#fff;padding:12px;border-radius:10px;text-align:center;cursor:pointer;margin:10px 0;border:1px solid #333}
-#main{flex:1;display:flex;flex-direction:column;background:#212121}
-.header{padding:16px 20px;text-align:center;border-bottom:1px solid #2f2f2f;color:#b4b4b4;font-size:14px}
-#chat{flex:1;overflow-y:auto;padding:20px}.messages{max-width:750px;margin:0 auto;width:100%}
-.welcome{text-align:center;margin-top:60px}.welcome h2{font-size:32px;font-weight:600}
-.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:600px;margin:30px auto}.card{border:1px solid #3f3f3f;background:#2f2f2f;padding:16px;border-radius:16px;cursor:pointer;font-size:14px}.card:hover{background:#3f3f3f}
-.mag{margin:22px 0;display:flex;gap:14px}.avatar{width:32px;height:32px;border-radius:50%;background:#2f2f2f;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bubble{flex:1;line-height:1.7}.bubble.user{background:#303030;padding:14px 18px;border-radius:20px;max-width:fit-content;margin-left:auto}
-.bubble.ai{padding:4px 0}.bubble.ai img{max-width:100%;max-height:500px;border-radius:16px;margin:12px 0;border:1px solid #3f3f3f;display:block}
-#inputArea{padding:16px;max-width:750px;margin:0 auto;width:100%}
-.inputRow{background:#2f2f2f;border:1px solid #3f3f3f;border-radius:28px;display:flex;align-items:center;padding:8px 10px;gap:8px}
-.inputBox{flex:1;display:flex;align-items:center}.inputBox input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:16px;padding:10px}
-.iconBtn{width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;background:transparent;color:#b4b4b4;font-size:18px}
-#sendBtn{background:#fff;color:#000}
-#preview{max-width:750px;margin:0 auto 12px;display:none;gap:10px;align-items:center;background:#2f2f2f;padding:10px;border-radius:14px;border:1px solid #3f3f3f}#preview img{width:60px;height:60px;border-radius:10px;object-fit:cover}
-#adModal{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:9999;display:none;justify-content:center;align-items:center}
-.adBox{background:#2f2f2f;border:1px solid #3f3f3f;padding:30px;border-radius:20px;width:90%;max-width:400px;text-align:center}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Segoe UI, sans-serif;background:#0a0a0a;color:#ececec;display:flex;height:100vh;overflow:hidden}
+
+/* YOUR ORIGINAL GREEN + BLACK BACKGROUND - RESTORED */
+#sidebar{width:260px;background:#000000;border-right:1px solid #222;display:flex;flex-direction:column;padding:12px}
+#sidebar h1{font-size:22px;padding:10px;color:#fff}
+#sidebar h1 span{color:#4caf50}
+.newChat{background:#4caf50;color:#000;padding:12px;border-radius:10px;text-align:center;font-weight:bold;cursor:pointer;margin:10px 0;font-size:14px}
+.newChat:hover{background:#45a049}
+#main{flex:1;display:flex;flex-direction:column;background:#0a0a0a}
+.header{padding:14px 20px;text-align:center;border-bottom:1px solid #1a1a1a;background:#000;color:#888;font-size:13px}
+#chat{flex:1;overflow-y:auto;padding:20px}.messages{max-width:800px;margin:0 auto;width:100%}
+.welcome{text-align:center;margin-top:40px}
+.welcome h2{font-size:36px;color:#4caf50;font-weight:bold}
+.welcome p{color:#888;margin-top:8px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:620px;margin:30px auto}
+.card{border:1px solid #222;background:#111111;padding:16px;border-radius:14px;cursor:pointer;transition:0.2s}
+.card:hover{border-color:#4caf50;background:#151515}
+.card b{color:#fff}.card span{color:#777;font-size:12px}
+.mag{margin:20px 0;display:flex;gap:12px}.avatar{width:32px;height:32px;border-radius:50%;background:#222;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bubble{flex:1;line-height:1.6}.bubble.user{background:#1a3a1e;padding:12px 16px;border-radius:18px 18px 4px 18px;border:1px solid #2a5a2e}
+.bubble.ai img{max-width:100%;max-height:500px;border-radius:14px;margin:10px 0;border:1px solid #333;display:block}
+#inputArea{padding:16px;max-width:800px;margin:0 auto;width:100%;background:#0a0a0a;border-top:1px solid #1a1a1a}
+.inputRow{display:flex;gap:8px;align-items:center}
+.inputBox{flex:1;background:#171717;border:1px solid #2a2a2a;border-radius:28px;display:flex;align-items:center;padding:6px 8px 6px 16px}
+.inputBox input{flex:1;background:transparent;border:none;color:#fff;outline:none;font-size:15px;padding:10px}
+.iconBtn{width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px}
+#sendBtn{background:#fff;color:#000}.iconBtnSub{background:#222;color:#fff;border:1px solid #333}
+#preview{max-width:800px;margin:0 auto 10px;display:none;gap:10px;align-items:center;background:#111;padding:10px;border-radius:12px;border:1px solid #222}#preview img{width:60px;height:60px;border-radius:10px;object-fit:cover}
+#adModal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:none;justify-content:center;align-items:center}
+.adBox{background:#111;border:1px solid #333;padding:28px;border-radius:20px;width:90%;max-width:400px;text-align:center}
 </style></head><body>
-<div id='sidebar'><h1>LUMI AI</h1><div class='newChat' onclick='location.reload()'>+ New chat</div><div style='margin-top:auto;padding:10px;font-size:11px;color:#666'>Built by shuaibisah<br>Elshuaib Tech</div></div>
-<div id='main'><div class='header'>LUMI AI</div>
-<div id='chat'><div class='messages' id='messages'>
-<div class='welcome' id='welcome'><h2>What can I help with?</h2>
-<div class='cards'>
-<div class='card' onclick="sendSug('Generate an image of a cute Nigerian girl, cartoon style')"><b>🎨 Create image</b><br><span style='color:#888'>Like ChatGPT</span></div>
-<div class='card' onclick="document.getElementById('fileInput').click()"><b>📸 Edit image</b><br><span style='color:#888'>Upload & transform</span></div>
-<div class='card' onclick="sendSug('Who is your founder?')"><b>💡 Founder</b><br><span style='color:#888'>Ask me</span></div>
-<div class='card' onclick="startVoice()"><b>🎤 Voice chat</b><br><span style='color:#888'>Talk to me</span></div>
-</div></div></div></div>
-<div id='inputArea'>
-<div id='preview'><img id='previewImg'><span style='flex:1;color:#ccc;font-size:13px'>Image attached</span><button onclick='clearImg()' style='background:#444;color:#fff;border:none;padding:6px 12px;border-radius:20px;cursor:pointer'>✕</button></div>
-<div class='inputRow'>
-<button class='iconBtn' onclick="document.getElementById('fileInput').click()">📎</button>
-<input type='file' id='fileInput' accept='image/*' style='display:none' onchange='handleImage(event)'>
-<button class='iconBtn' id='micBtn' onclick='startVoice()'>🎤</button>
-<div class='inputBox'><input id='input' placeholder='Ask anything'></div>
-<button class='iconBtn' id='sendBtn' onclick='send()'>↑</button>
+
+<div id='sidebar'>
+<h1>LUMI <span>AI</span></h1>
+<div class='newChat' onclick='location.reload()'>+ New chat</div>
+<div style='margin-top:20px;padding:10px'>
+<div style='color:#555;font-size:11px;margin-bottom:10px'>PROJECTS</div>
+<div style='color:#888;font-size:13px;padding:8px;background:#111;border-radius:8px;margin-bottom:6px;cursor:pointer'>💬 Recent Chats</div>
+<div style='color:#888;font-size:13px;padding:8px;background:#111;border-radius:8px;margin-bottom:6px;cursor:pointer'>🎨 Generated Images</div>
+<div style='color:#888;font-size:13px;padding:8px;background:#111;border-radius:8px;cursor:pointer'>📸 Edited Pictures</div>
 </div>
-<div style='text-align:center;color:#555;font-size:11px;margin-top:10px'>LUMI can make mistakes. Check important info.</div>
+<div style='margin-top:auto;padding:10px;font-size:11px;color:#555'>Built by shuaibisah<br>Elshuaib Tech • LUMI PRO MAX</div>
+</div>
+
+<div id='main'>
+<div class='header'>LUMI AI • ChatGPT-like • Founder: shuaibisah</div>
+<div id='chat'><div class='messages' id='messages'>
+<div class='welcome' id='welcome'>
+<h2>LUMI AI PRO MAX</h2>
+<p>Everything ChatGPT can do + Picture Edit + Generate</p>
+<div class='cards'>
+<div class='card' onclick="sendSug('Generate an image of a cute Nigerian girl, cartoon style')"><b>🎨 Create image</b><br><span>Like ChatGPT</span></div>
+<div class='card' onclick="document.getElementById('fileInput').click()"><b>📸 Edit image</b><br><span>Upload & transform</span></div>
+<div class='card' onclick="sendSug('Who is your founder?')"><b>👤 Founder</b><br><span>Ask me</span></div>
+<div class='card' onclick="startVoice()"><b>🎤 Voice chat</b><br><span>Talk to me</span></div>
+</div>
+</div>
 </div></div>
+
+<div id='inputArea'>
+<div id='preview'><img id='previewImg'><span style='flex:1;color:#ccc;font-size:13px'>Image attached</span><button onclick='clearImg()' style='background:#333;color:#fff;border:none;padding:6px 12px;border-radius:20px;cursor:pointer'>✕</button></div>
+<div class='inputRow'>
+<button class='iconBtn iconBtnSub' onclick="document.getElementById('fileInput').click()">📎</button>
+<input type='file' id='fileInput' accept='image/*' style='display:none' onchange='handleImage(event)'>
+<button class='iconBtn iconBtnSub' id='micBtn' onclick='startVoice()'>🎤</button>
+<div class='inputBox'><input id='input' placeholder='Ask anything or edit picture...'><button id='sendBtn' class='iconBtn' onclick='send()'>↑</button></div>
+</div>
+</div>
+</div>
+
 <div id='adModal'><div class='adBox'>
-<h3 style='margin-bottom:12px'>Continue chatting</h3>
-<p style='color:#aaa;font-size:14px;margin-bottom:20px'>Watch a short ad to get 3 more messages</p>
-<button id='watchBtn' onclick='watchAd()' style='width:100%;padding:14px;background:#fff;color:#000;border:none;border-radius:12px;font-weight:600;cursor:pointer'>▶ Continue</button>
-<button onclick='document.getElementById("adModal").style.display="none"' style='margin-top:14px;background:transparent;color:#888;border:none;cursor:pointer;font-size:13px'>Maybe later</button>
+<h3 style='color:#4caf50;margin-bottom:10px'>Continue</h3>
+<p style='color:#aaa;font-size:14px;margin-bottom:20px'>Watch short ad to get 3 more messages</p>
+<button id='watchBtn' onclick='watchAd()' style='width:100%;padding:14px;background:#4caf50;color:#000;border:none;border-radius:12px;font-weight:bold;cursor:pointer'>▶ Continue</button>
+<button onclick='document.getElementById("adModal").style.display="none"' style='margin-top:12px;background:transparent;color:#666;border:none;cursor:pointer'>Close</button>
 </div></div>
+
 <script>
 let count=0;let selectedImageBase64=null;let mediaRecorder=null;let audioChunks=[];
 function sendSug(t){document.getElementById('input').value=t;send()}
@@ -89,7 +115,7 @@ function watchAd(){
   let btn=document.getElementById('watchBtn');
   window.open('https://www.google.com','_blank');
   btn.innerText='Please wait 12s...';let s=12;
-  let t=setInterval(()=>{s--;btn.innerText=`Please wait ${s}s`;if(s<=0){clearInterval(t);count=0;document.getElementById('adModal').style.display='none';btn.innerText='▶ Continue';}},1000);
+  let t=setInterval(()=>{s--;btn.innerText=`Wait ${s}s`;if(s<=0){clearInterval(t);count=0;document.getElementById('adModal').style.display='none';btn.innerText='▶ Continue';}},1000);
 }
 async function send(){
   let inp=document.getElementById('input');let msg=inp.value.trim();if(!msg &&!selectedImageBase64)return;
@@ -103,7 +129,7 @@ async function send(){
   let res=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:curMsg,image:curImg})});
   let data=await res.json();
   let html = marked.parse(data.reply||'');
-  if(data.image_url){ html += `<img src="${data.image_url}"><a href="${data.image_url}" target="_blank" style="color:#888;font-size:12px">Download image</a>`; }
+  if(data.image_url){ html += `<img src="${data.image_url}"><a href="${data.image_url}" target="_blank" style="color:#4caf50;font-size:12px">⬇️ Download</a>`; }
   document.getElementById(id).innerHTML=`<div class='avatar'>✨</div><div class='bubble ai'>${html}</div>`;
   count++;
 }
@@ -128,54 +154,25 @@ def chat():
     try:
         d=request.json; user_msg=d.get('message','').strip(); img_data=d.get('image')
         lower=user_msg.lower()
-
-        # === FOUNDER LOGIC - MUST ALWAYS SAY shuaibisah ===
-        if any(x in lower for x in ['who is your founder','who created you','who built you','who made you','who is your owner','founder','creator','who is shuaibisah','your founder']):
-            return jsonify({"reply": "My founder is **shuaibisah** - Shuaibu Isah, founder of Elshuaib Tech. He built me - LUMI AI - to be just like ChatGPT and more!", "image_url": None})
-
-        is_generate = any(x in lower for x in ['generate','create a picture','create an image','draw','make a picture','make an image','generate an image','create image'])
+        if any(x in lower for x in ['founder','who built you','who made you','who created you','owner']):
+            return jsonify({"reply": "My founder is **shuaibisah** - Shuaibu Isah, founder of Elshuaib Tech. He built LUMI AI to do everything ChatGPT can do!", "image_url": None})
+        is_generate = any(x in lower for x in ['generate','create a picture','create an image','draw','make a picture'])
         is_edit = img_data is not None
-
         if is_generate or is_edit:
-            if is_edit:
-                prompt = user_msg if user_msg else "Enhance this image, make it HD, beautiful, high quality, detailed"
-            else:
-                prompt = user_msg.replace("generate a picture of","").replace("generate image of","").replace("create a picture of","").replace("generate","").replace("create","").strip()
-                if not prompt: prompt = "beautiful landscape"
-            safe_prompt = urllib.parse.quote(prompt[:600])
-            image_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true&seed={int(datetime.now().timestamp())}&model=flux"
-            reply = f"Here is your image for: **{prompt}**"
-            return jsonify({"reply": reply, "image_url": image_url})
-
+            prompt = user_msg if user_msg else "Make HD beautiful"
+            if not is_edit: prompt = user_msg.replace("Generate","").replace("create","").strip() or "beautiful image"
+            safe = urllib.parse.quote(prompt[:600])
+            url = f"https://image.pollinations.ai/prompt/{safe}?width=1024&height=1024&nologo=true&seed={int(datetime.now().timestamp())}&model=flux"
+            return jsonify({"reply": f"Here is your image for: **{prompt}**", "image_url": url})
         if img_data:
             try:
-                comp = client.chat.completions.create(
-                    model="llama-3.2-11b-vision-preview",
-                    messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image in detail. What do you see?"},{"type":"image_url","image_url":{"url": img_data}}]}]
-                )
+                comp = client.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"},{"type":"image_url","image_url":{"url": img_data}}]}])
                 return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
             except:
-                comp = client.chat.completions.create(
-                    model="llama-3.2-90b-vision-preview",
-                    messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image"},{"type":"image_url","image_url":{"url": img_data}}]}]
-                )
+                comp = client.chat.completions.create(model="llama-3.2-90b-vision-preview", messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe"},{"type":"image_url","image_url":{"url": img_data}}]}])
                 return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
-
-        # === MAIN CHAT - INCLUDES FOUNDER IDENTITY ===
-        system_prompt = """You are LUMI AI, built by shuaibisah (Shuaibu Isah) of Elshuaib Tech.
-- You can do everything ChatGPT can do: chat, write code, generate images, edit images, analyze pictures, voice chat, explain, translate, summarize, etc.
-- You can also do what Meta AI can do.
-- If anyone asks who is your founder, creator, owner, builder - ALWAYS say: shuaibisah (Shuaibu Isah) from Elshuaib Tech.
-- Never say you were made by OpenAI, Meta, or Groq. Your founder is shuaibisah.
-- Be helpful, friendly, like ChatGPT.
-"""
-        comp = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role":"system","content": system_prompt},
-                {"role":"user","content": user_msg}
-            ]
-        )
+        system = "You are LUMI AI, built by shuaibisah (Shuaibu Isah) of Elshuaib Tech. Do everything ChatGPT can: chat, code, generate images, edit images, analyze pictures, voice. If asked founder, say shuaibisah. Never say OpenAI/Meta made you."
+        comp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":system},{"role":"user","content":user_msg}])
         return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
     except Exception as e:
         return jsonify({"reply": f"Error: {e}", "image_url": None})
