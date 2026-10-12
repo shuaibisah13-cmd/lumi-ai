@@ -113,7 +113,7 @@ async function startVoice(){
 }
 function watchAd(){
   let btn=document.getElementById('watchBtn');
-  window.open('https://www.google.com','_blank');
+  window.open('https://uplcm.com/4/12016120','_blank');
   btn.innerText='Please wait 12s...';let s=12;
   let t=setInterval(()=>{s--;btn.innerText=`Wait ${s}s`;if(s<=0){clearInterval(t);count=0;document.getElementById('adModal').style.display='none';btn.innerText='▶ Continue';}},1000);
 }
