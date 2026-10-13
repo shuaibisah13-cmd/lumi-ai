@@ -27,6 +27,10 @@ HTML = """
 <title>LUMI AI ULTRA - Better Than ChatGPT</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#4caf50">
+<meta name="description" content="LUMI AI ULTRA by shuaibisah - Better than ChatGPT, 10x faster, unlimited images, sees photos, speaks Nigerian languages">
+<link rel="icon" type="image/png" sizes="192x192" href="/logo.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/logo.png">
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -171,7 +175,6 @@ function addAiMsg(text){
  let html=marked.parse(text);
  el.innerHTML=html+`<div class='actBtn'><button onclick="navigator.clipboard.writeText(\`${text.replace(/`/g,'\\`')}\`)">📋 Copy</button><button onclick="speakText(\`${text.replace(/`/g,'').slice(0,300)}\`)">🔊 Speak</button></div>`;
  el.querySelectorAll('pre code').forEach(b=>hljs.highlightElement(b));
- // add copy btn to code
  el.querySelectorAll('pre').forEach(pre=>{
    let btn=document.createElement('button');btn.className='copyBtn';btn.innerText='Copy';btn.onclick=()=>{navigator.clipboard.writeText(pre.innerText);btn.innerText='Copied!';setTimeout(()=>btn.innerText='Copy',1500)};pre.appendChild(btn);
  });
@@ -201,19 +204,38 @@ document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Ent
 """
 @app.route('/')
 def home(): return HTML
+
 @app.route('/manifest.json')
 def manifest():
     return jsonify({
-        "name": "LUMI AI ULTRA",
+        "name": "LUMI AI ULTRA - Better Than ChatGPT",
         "short_name": "LUMI ULTRA",
+        "description": "LUMI AI ULTRA by shuaibisah - Better than ChatGPT, 10x faster, unlimited images, sees photos, speaks Nigerian languages. Built by Elshuaib Tech.",
         "start_url": "/",
         "display": "standalone",
         "background_color": "#0a0a0a",
         "theme_color": "#4caf50",
-        "icons": [{"src": "/logo.png", "sizes": "512x512", "type": "image/png"}]
+        "icons": [
+            {"src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+            {"src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+        ]
     })
+
+@app.route('/sw.js')
+def sw():
+    return Response("""
+    self.addEventListener('install', e => self.skipWaiting());
+    self.addEventListener('activate', e => self.clients.claim());
+    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));
+    """, mimetype='application/javascript')
+
 @app.route('/logo.png')
-def logo(): return send_from_directory('.', 'logo.png')
+def logo():
+    try:
+        return send_from_directory('.', 'logo.png')
+    except:
+        return Response("", status=404)
+
 @app.route('/voice', methods=['POST'])
 def voice():
     try:
