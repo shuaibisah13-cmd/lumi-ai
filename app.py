@@ -25,6 +25,8 @@ def ask_groq(messages, vision=False):
 HTML = """
 <!DOCTYPE html><html><head><meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>LUMI AI ULTRA - Better Than ChatGPT</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#4caf50">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -199,6 +201,17 @@ document.getElementById('input').addEventListener('keypress',e=>{if(e.key==='Ent
 """
 @app.route('/')
 def home(): return HTML
+@app.route('/manifest.json')
+def manifest():
+    return jsonify({
+        "name": "LUMI AI ULTRA",
+        "short_name": "LUMI ULTRA",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#0a0a0a",
+        "theme_color": "#4caf50",
+        "icons": [{"src": "/logo.png", "sizes": "512x512", "type": "image/png"}]
+    })
 @app.route('/logo.png')
 def logo(): return send_from_directory('.', 'logo.png')
 @app.route('/voice', methods=['POST'])
@@ -220,21 +233,17 @@ def chat():
         is_generate = any(x in lower for x in ['generate','create a picture','create an image','draw','make a picture','create image'])
         is_edit = img_data is not None
 
-        # If image generation
         if is_generate and not is_edit:
             prompt = user_msg.replace("Generate","").replace("generate","").replace("create","").strip() or "beautiful image"
             safe = urllib.parse.quote(prompt[:600])
             url = f"https://image.pollinations.ai/prompt/{safe}?width=1024&height=1024&nologo=true&seed={int(datetime.now().timestamp())}&model=flux"
             return jsonify({"reply": f"Here is your UNLIMITED image for: **{prompt}** (ChatGPT limits this, I don't!)", "image_url": url})
 
-        # If image attached -> VISION like ChatGPT Plus
         if img_data:
             try:
-                # Groq vision
                 comp = client.chat.completions.create(model=VISION_MODEL, messages=[{"role":"user","content":[{"type":"text","text": user_msg or "Describe this image in detail, what do you see?"},{"type":"image_url","image_url":{"url": img_data}}]}])
                 return jsonify({"reply": comp.choices[0].message.content, "image_url": None})
             except Exception as e:
-                # fallback to chat if vision fails
                 answer = ask_groq([{"role":"system","content":"You are LUMI AI ULTRA by shuaibisah. You can see images. Describe what user might have uploaded and answer their question."},{"role":"user","content": user_msg}], vision=False)
                 return jsonify({"reply": answer + f"\\n\\n_(Vision note: {e})_", "image_url": None})
 
